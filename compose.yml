@@ -1,0 +1,10 @@
+services:
+    scrapping-service:
+        image: scraping
+        build: 
+            context: .
+            dockerfile: dockerfile
+        volumes:
+            - ./contenedor:/scraping/processed/
+    csv-to-sql-server:
+        
