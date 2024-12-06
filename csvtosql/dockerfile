@@ -1,0 +1,38 @@
+FROM python:3.11-slim
+
+# Establece el directorio de trabajo
+WORKDIR /csvtosql
+
+# Instala las dependencias necesarias
+RUN apt-get update && apt-get install -y bash cron unixodbc unixodbc-dev curl wget gnupg
+
+# Copia los archivos necesarios al contenedor
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+COPY script.sh .
+COPY . .
+
+# Permisos para hacerlos ejecutables
+RUN chmod +x ./script.sh
+
+# Configura las tareas de crontab
+RUN echo "* * * * * bash /csvtosql/script.sh >> /csvtosql/script.log 2>&1" > /etc/cron.d/csvtosql-task
+
+RUN chmod 0644 /etc/cron.d/csvtosql-task
+
+# Aplica el archivo de cron
+RUN crontab /etc/cron.d/csvtosql-task
+
+# Establece el frontend de debconf a no interactivo para evitar la solicitud de aceptación de la licencia
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Instala odbcinst antes de instalar msodbcsql18
+RUN apt-get install -y odbcinst
+
+RUN wget https://packages.microsoft.com/debian/12/prod/pool/main/m/msodbcsql18/msodbcsql18_18.3.2.1-1_arm64.deb -O /tmp/msodbcsql18.deb \
+    && ACCEPT_EULA=Y dpkg -i /tmp/msodbcsql18.deb \
+    && apt-get install -y -f \
+    && rm /tmp/msodbcsql18.deb
+
+# Inicia cron y el contenedor
+CMD ["cron", "-f"]

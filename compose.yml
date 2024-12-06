@@ -6,5 +6,33 @@ services:
             dockerfile: dockerfile
         volumes:
             - ./contenedor:/scraping/processed/
-    csv-to-sql-server:
-        
+    sqlserver:
+        build:
+            context: ./db
+            dockerfile: dockerfile
+        container_name: sqlserver
+        platform: linux/amd64
+        environment:
+            SA_PASSWORD: "iWZJM5j89{ez"
+            ACCEPT_EULA: "Y"
+        ports:
+            - "1433:1433"
+        volumes:
+            - sql_data:/var/opt/mssql
+    csvtosql:
+        image: csvtosql
+        build:
+            context: ./csvtosql
+            dockerfile: dockerfile
+        volumes:
+            - ./contenedor:/csvtosql/csv
+        depends_on:
+            - sqlserver
+        environment:
+            DB_HOST: sqlserver
+            DB_PORT: 1433
+            DB_USER: sa
+            DB_PASSWORD: iWZJM5j89{ez
+            DB_NAME: mydatabase   
+volumes:
+    sql_data:

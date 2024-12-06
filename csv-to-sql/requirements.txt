@@ -1,4 +1,0 @@
-requests
-jsonpath-ng
-parse
-flask
